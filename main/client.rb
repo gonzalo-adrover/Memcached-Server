@@ -4,8 +4,13 @@ HOSTNAME = 'localhost'
 PORT = 1010
 
 s = TCPSocket.open(HOSTNAME, PORT)
+puts 'connected succesfully'
 
-while line = s.gets     
-    puts line.chomp  
+#command = gets
+#s.puts command
+
+while line = s.gets
+  puts line
 end
-s.close                 
+
+s.close

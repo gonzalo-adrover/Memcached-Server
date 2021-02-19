@@ -1,7 +1,0 @@
-class commandController
-
-=begin
-
-=end
-
-

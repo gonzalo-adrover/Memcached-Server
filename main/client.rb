@@ -6,11 +6,12 @@ PORT = 1010
 s = TCPSocket.open(HOSTNAME, PORT)
 puts 'connected succesfully'
 
-#command = gets
-#s.puts command
+client = s.gets( "\n" ).chomp( "\n" )
 
-while line = s.gets
-  puts line
-end
+puts "message #{client}"
+
+line = s.gets
+puts "#{line}"
+line = s.gets
 
 s.close

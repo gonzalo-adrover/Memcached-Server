@@ -1,10 +1,24 @@
 require 'pp'
 
-h = {:foo => 0, :bar => 1, :baz => 2}
+class Test
 
-puts h.key?(("foo").to_sym)
+      attr_accessor :data_hash
+
+      def initialize
+      @data_hash = Hash.new
+      end
+
+      data_hash = {:foo => 0, :bar => 1, :baz => 2}
+
+      line = gets
 
 
-#my_hash = {}
-#my_hash[:my_key] = 'value'
-#puts my_hash.has_key?("my_key".to_sym)
+      def getr(line)
+            puts data_hash[:line]
+      end
+      
+      
+      #my_hash = {}
+      #my_hash[:my_key] = 'value'
+      #puts my_hash.has_key?("my_key".to_sym)
+end

@@ -13,7 +13,7 @@ class Server
       loop {                           
             Thread.start(server.accept) do |client|
             puts "New client: #{client}"
-            client.puts("Hello world from server")
+            client.puts("Hello world from server\r\n")
 
             while line = client.gets
 

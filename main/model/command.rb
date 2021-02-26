@@ -9,4 +9,5 @@ class Command
           @bytes = bytes
           @value = value
       end
+
 end

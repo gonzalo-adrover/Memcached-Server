@@ -37,7 +37,6 @@ the reply, which may be:
 - "STORED\r\n"
 
 - "NOT_STORED\r\n" 
-
 - "EXISTS\r\n"
 
 - "NOT_FOUND\r\n" 

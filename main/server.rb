@@ -1,9 +1,9 @@
 require 'socket'
-require_relative 'controller/controller'
+require_relative 'DAO/dao'
 require 'pp'
 
 class Server
-      controller = Controller.new
+      dao = DAO.new
 
       PORT   = 1010
       server = TCPServer.open(PORT)
@@ -12,44 +12,44 @@ class Server
 
       loop {                           
             Thread.start(server.accept) do |client|
-            puts "New client: #{client}"
-            client.puts("Hello world from server\r\n")
+                  puts "New client: #{client}"
+                  client.puts("Hello world from server\r\n")
 
-            while line = client.gets
+                  while line = client.gets
 
-                  array_info = line.split
-                  command = array_info[0]
+                        array_info = line.split
+                        command = array_info[0]
 
-                  case command
+                        case command
                         when "set"
                               data_block = client.gets( "\r\n" ).chomp( "\r\n" )
-                              result = controller.set(array_info,data_block)
+                              result = dao.set(array_info,data_block)
                               client.puts(result)
                         when "add"
                               data_block = client.gets( "\r\n" ).chomp( "\r\n" )
-                              result = controller.add(array_info,data_block)
+                              result = dao.add(array_info,data_block)
                               client.puts(result)
                         when "replace"   
                               data_block = client.gets( "\r\n" ).chomp( "\r\n" )
-                              result = controller.replace(array_info,data_block)
+                              result = dao.replace(array_info,data_block)
                               client.puts(result)
                         when "append"
                               data_block = client.gets( "\r\n" ).chomp( "\r\n" )
-                              result = controller.append(array_info,data_block)
+                              result = dao.append(array_info,data_block)
                               client.puts(result)
                         when "prepend"
                               data_block = client.gets( "\r\n" ).chomp( "\r\n" )
-                              result = controller.prepend(array_info,data_block)
+                              result = dao.prepend(array_info,data_block)
                               client.puts(result)
                         when "cas"
                               data_block = client.gets( "\r\n" ).chomp( "\r\n" )
-                              result = controller.cas(array_info,data_block)
+                              result = dao.cas(array_info,data_block)
                               client.puts(result)
                         when "get"
-                              result = controller.get(array_info)
+                              result = dao.get(array_info)
                               client.puts(result)
                         when "gets"
-                              result = controller.gets(array_info)
+                              result = dao.gets(array_info)
                               client.puts(result)
                         end
                   end

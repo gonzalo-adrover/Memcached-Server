@@ -1,6 +1,6 @@
-require_relative '../model/command_dao'
+require_relative 'command_dao'
 
-class Controller
+class DAO
     attr_accessor :command_dao
 
     def initialize

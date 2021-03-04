@@ -1,6 +1,6 @@
 class Command
  
-      attr_accessor :key, :flag, :time, :bytes, :value, :cas_value
+      attr_accessor :key, :flag, :time, :bytes, :value, :cas_value, :expTime
 
       def initialize(key, flag, expTime, bytes, value, cas_value)
           @key = key

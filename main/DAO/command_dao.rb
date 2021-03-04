@@ -14,44 +14,13 @@ class CommandDAO
         @cas_value = 0
     end
 
-
-    def remove_expired()
-        i = 1
-        n = data_hash.length
-        until i == n do
-            command = self.data_hash[i]
-            i = i + 1
-            if(command.expTime < Time.now) then
-                data_hash.delete(command)
-            end
-        end
-    end  
-
-=begin
-    def remove_expired()
-        #data_hash.each do |i|
-        for i in data_hash do
-            now = Time.now
-            for n in i do
-                puts n
-            end
-      #      if(now < i.expTime) then
-      #          data_hash.delete i
-     #       end
-        end
-    end
-=end
-    def gets(s)
-        self.remove_expired
-       # puts(data_hash)
-    end
-
     def set(arrayInfo, value)
-        status = self.command_checker_retrieval(arrayInfo,value)
+        self.remove_expired
+        status = self.command_checker_storage(arrayInfo,value)
         if(status.include?("success")) then
                 self.cas_value += 1
-                time = Time.now + Integer(arrayInfo[3])
-                full_key = Command.new(arrayInfo[1],arrayInfo[2],time,arrayInfo[4],value,cas_value)
+                exp_time = Time.now + Integer(arrayInfo[3])
+                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
                 data_hash.store(arrayInfo[1],full_key)
                 return "STORED\r\n"
         elsif (status.include?("CLIENT_ERROR"))
@@ -62,11 +31,13 @@ class CommandDAO
     end
 
     def add(arrayInfo, value)
-        status = self.command_checker_retrieval(arrayInfo,value)
+        self.remove_expired
+        status = self.command_checker_storage(arrayInfo,value)
         if(status.include?("success")) then
            if(!data_hash.key?(arrayInfo[1])) then
                 self.cas_value += 1
-                full_key = Command.new(arrayInfo[1],arrayInfo[2],arrayInfo[3],arrayInfo[4],value,cas_value)
+                exp_time = Time.now + Integer(arrayInfo[3])
+                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
                 data_hash.store(arrayInfo[1],full_key)
                 return "STORED\r\n"
             else
@@ -80,12 +51,14 @@ class CommandDAO
     end
 
     def replace(arrayInfo, value)
-        status = self.command_checker_retrieval(arrayInfo,value)
+        self.remove_expired
+        status = self.command_checker_storage(arrayInfo,value)
         if(status.include?("success")) then
             if(data_hash.key?(arrayInfo[1])) then
                 self.cas_value += 1
+                exp_time = Time.now + Integer(arrayInfo[3])
                 data_hash.delete arrayInfo[1]
-                full_key = Command.new(arrayInfo[1],arrayInfo[2],arrayInfo[3],arrayInfo[4],value,cas_value)
+                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
                 data_hash.store(arrayInfo[1],full_key)
                 return "STORED\r\n"
             else
@@ -99,16 +72,19 @@ class CommandDAO
     end
 
     def append(arrayInfo, value)
-        status = self.command_checker_retrieval(arrayInfo,value)
+        self.remove_expired
+        status = self.command_checker_storage(arrayInfo,value)
         if(status.include?("success")) then
             if(data_hash.key?(arrayInfo[1])) then
                 self.cas_value += 1
                 existing_key = data_hash[arrayInfo[1]]
-                appended_value = existing_key.value + value 
-                existing_key.value = appended_value
-                existing_key.cas_value = cas_value
+                existing_key.flag = arrayInfo[2]
+                existing_key.time = Time.now + Integer(arrayInfo[3])
                 bytes = arrayInfo[3]
                 existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
+                appended_value = existing_key.value + value
+                existing_key.value = appended_value
+                existing_key.cas_value = cas_value
                 return "STORED\r\n"
             else
                 return "NOT_STORED\r\n"
@@ -121,16 +97,19 @@ class CommandDAO
     end
 
     def prepend(arrayInfo, value)
-        status = self.command_checker_retrieval(arrayInfo,value)
+        self.remove_expired
+        status = self.command_checker_storage(arrayInfo,value)
         if(status.include?("success")) then
             if(data_hash.key?(arrayInfo[1])) then
                 self.cas_value += 1
                 existing_key = data_hash[arrayInfo[1]]
+                existing_key.flag = arrayInfo[2]
+                existing_key.time = Time.now + Integer(arrayInfo[3])
+                bytes = arrayInfo[3]
+                existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
                 appended_value = value + existing_key.value 
                 existing_key.value = appended_value
                 existing_key.cas_value = cas_value
-                bytes = arrayInfo[3]
-                existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
                 return "STORED\r\n"
             else
                 return "NOT_STORED\r\n"
@@ -143,12 +122,15 @@ class CommandDAO
     end
 
     def cas(arrayInfo, value)
-        status = self.command_checker_retrieval(arrayInfo,value)
+        self.remove_expired
+        status = self.command_checker_storage(arrayInfo,value)
         if(status.include?("success")) then
             if(data_hash.key?(arrayInfo[1])) then
                 existing_key = data_hash[arrayInfo[1]]
                 if(Integer(existing_key.cas_value) == Integer(arrayInfo[5])) then
-                    self.set(arrayInfo, value)
+                    new_cas = Integer(arrayInfo[5]) + 1
+                    array_new_cas = [arrayInfo[0],arrayInfo[1],arrayInfo[2],arrayInfo[3],arrayInfo[4],new_cas]
+                    self.set(arrayInfo, value) #partir el array y subirle en uno el cas value
                 else    
                     "EXISTS\r\n"
                 end
@@ -163,6 +145,7 @@ class CommandDAO
     end
 
     def get(key_array)
+        self.remove_expired
         i = 1
         n = key_array.length
         output = ""
@@ -178,8 +161,9 @@ class CommandDAO
         end
         return output + "END\r\n"
     end
-=begin
+
     def gets(key_array)
+        self.remove_expired
         i = 1
         n = key_array.length
         output = ""
@@ -195,8 +179,16 @@ class CommandDAO
         end
         return output + "END\r\n"
     end
-=end
-    def command_checker_storage (array)
+
+    def remove_expired()
+        data_hash.each do |name,key|
+            if (Time.now > key.expTime) then 
+                data_hash.delete name
+            end
+        end
+    end
+
+    def command_checker_retrieval (array)
         command = array[0]
         valid_commands = ["get","gets"]
         error = ""
@@ -205,7 +197,7 @@ class CommandDAO
         end
     end
 
-    def command_checker_retrieval (array,data)
+    def command_checker_storage (array,data)
         command = array[0]
         flag = array[2]
         expTime = array[3]

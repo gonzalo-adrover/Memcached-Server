@@ -1,29 +1,31 @@
 require_relative 'command'
+require_relative '../message'
+require_relative '../validator'
 require 'pp'
 
 class CommandDAO
 
-    FLAG_RANGE = (2**16)
-    MAX_EXP_TIME = 2592000
-    MAX_BYTES= 256
-
-    attr_accessor :data_hash, :cas_value
+    attr_accessor :data_hash, :cas_value, :validator
 
     def initialize
         @data_hash = Hash.new
-        @cas_value = 0
+        @validator = Validator.new
+        @cas_value = 1
     end
 
     def set(arrayInfo, value)
-        self.remove_expired
-        status = self.command_checker_storage(arrayInfo,value)
-        if(status.include?("success")) then
-                self.cas_value += 1
+        validator.remove_expired(data_hash)
+        status = validator.command_checker_storage(arrayInfo,value)
+        if(status.include?(SUCCESS)) then
                 exp_time = Time.now + Integer(arrayInfo[3])
-                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
+                if arrayInfo.length == 5 then
+                    full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
+                elsif arrayInfo.length == 6 then
+                    full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,arrayInfo[5])
+                end
                 data_hash.store(arrayInfo[1],full_key)
-                return "STORED\r\n"
-        elsif (status.include?("CLIENT_ERROR"))
+                return STORED
+        elsif (status.include?(CLIENT_ERROR))
             return status
         else
             return status
@@ -31,19 +33,18 @@ class CommandDAO
     end
 
     def add(arrayInfo, value)
-        self.remove_expired
-        status = self.command_checker_storage(arrayInfo,value)
-        if(status.include?("success")) then
+        validator.remove_expired(data_hash)
+        status = validator.command_checker_storage(arrayInfo,value)
+        if(status.include?(SUCCESS)) then
            if(!data_hash.key?(arrayInfo[1])) then
-                self.cas_value += 1
                 exp_time = Time.now + Integer(arrayInfo[3])
                 full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
                 data_hash.store(arrayInfo[1],full_key)
-                return "STORED\r\n"
+                return STORED
             else
-                return "NOT_STORED\r\n"
+                return NOT_STORED
             end
-        elsif (status.include?("CLIENT_ERROR"))
+        elsif (status.include?(CLIENT_ERROR))
             return status
         else
             return status
@@ -51,20 +52,21 @@ class CommandDAO
     end
 
     def replace(arrayInfo, value)
-        self.remove_expired
-        status = self.command_checker_storage(arrayInfo,value)
-        if(status.include?("success")) then
+        validator.remove_expired(data_hash)
+        status = validator.command_checker_storage(arrayInfo,value)
+        if(status.include?(SUCCESS)) then
             if(data_hash.key?(arrayInfo[1])) then
-                self.cas_value += 1
+                existing_key = data_hash[arrayInfo[1]]
+                existing_key.cas_value += 1
                 exp_time = Time.now + Integer(arrayInfo[3])
                 data_hash.delete arrayInfo[1]
-                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
+                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,existing_key.cas_value)
                 data_hash.store(arrayInfo[1],full_key)
-                return "STORED\r\n"
+                return STORED
             else
-                return "NOT_STORED\r\n"
+                return NOT_STORED
             end
-        elsif (status.include?("CLIENT_ERROR"))
+        elsif (status.include?(CLIENT_ERROR))
             return status
         else
             return status
@@ -72,24 +74,23 @@ class CommandDAO
     end
 
     def append(arrayInfo, value)
-        self.remove_expired
-        status = self.command_checker_storage(arrayInfo,value)
-        if(status.include?("success")) then
+        validator.remove_expired(data_hash)
+        status = validator.command_checker_storage(arrayInfo,value)
+        if(status.include?(SUCCESS)) then
             if(data_hash.key?(arrayInfo[1])) then
-                self.cas_value += 1
                 existing_key = data_hash[arrayInfo[1]]
                 existing_key.flag = arrayInfo[2]
                 existing_key.time = Time.now + Integer(arrayInfo[3])
-                bytes = arrayInfo[3]
+                bytes = arrayInfo[4]
                 existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
                 appended_value = existing_key.value + value
                 existing_key.value = appended_value
-                existing_key.cas_value = cas_value
-                return "STORED\r\n"
+                existing_key.cas_value += 1
+                return STORED
             else
-                return "NOT_STORED\r\n"
+                return NOT_STORED
             end
-        elsif (status.include?("CLIENT_ERROR"))
+        elsif (status.include?(CLIENT_ERROR))
             return status
         else
             return status
@@ -97,24 +98,23 @@ class CommandDAO
     end
 
     def prepend(arrayInfo, value)
-        self.remove_expired
-        status = self.command_checker_storage(arrayInfo,value)
-        if(status.include?("success")) then
+        validator.remove_expired(data_hash)
+        status = validator.command_checker_storage(arrayInfo,value)
+        if(status.include?(SUCCESS)) then
             if(data_hash.key?(arrayInfo[1])) then
-                self.cas_value += 1
                 existing_key = data_hash[arrayInfo[1]]
                 existing_key.flag = arrayInfo[2]
-                existing_key.time = Time.now + Integer(arrayInfo[3])
-                bytes = arrayInfo[3]
+                existing_key.exp_Time = Time.now + Integer(arrayInfo[3])
+                bytes = arrayInfo[4]
                 existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
                 appended_value = value + existing_key.value 
                 existing_key.value = appended_value
-                existing_key.cas_value = cas_value
-                return "STORED\r\n"
+                existing_key.cas_value += 1
+                return STORED
             else
-                return "NOT_STORED\r\n"
+                return NOT_STORED
             end
-        elsif (status.include?("CLIENT_ERROR"))
+        elsif (status.include?(CLIENT_ERROR))
             return status
         else
             return status
@@ -122,22 +122,22 @@ class CommandDAO
     end
 
     def cas(arrayInfo, value)
-        self.remove_expired
-        status = self.command_checker_storage(arrayInfo,value)
-        if(status.include?("success")) then
+        validator.remove_expired(data_hash)
+        status = validator.command_checker_storage(arrayInfo,value)
+        if(status.include?(SUCCESS)) then
             if(data_hash.key?(arrayInfo[1])) then
                 existing_key = data_hash[arrayInfo[1]]
                 if(Integer(existing_key.cas_value) == Integer(arrayInfo[5])) then
                     new_cas = Integer(arrayInfo[5]) + 1
                     array_new_cas = [arrayInfo[0],arrayInfo[1],arrayInfo[2],arrayInfo[3],arrayInfo[4],new_cas]
-                    self.set(arrayInfo, value) #partir el array y subirle en uno el cas value
+                    self.set(array_new_cas, value) #partir el array y subirle en uno el cas value
                 else    
-                    "EXISTS\r\n"
+                    EXISTS
                 end
             else
-                "NOT_FOUND\r\n"
+                NOT_FOUND
             end
-        elsif (status.include?("CLIENT_ERROR"))
+        elsif (status.include?(CLIENT_ERROR))
             return status
         else
             return status
@@ -145,7 +145,7 @@ class CommandDAO
     end
 
     def get(key_array)
-        self.remove_expired
+        validator.remove_expired(data_hash)
         i = 1
         n = key_array.length
         output = ""
@@ -159,11 +159,11 @@ class CommandDAO
                 output = output + " \r\n" #added for information to the client
             end
         end
-        return output + "END\r\n"
+        return output + END_MESSAGE
     end
 
     def gets(key_array)
-        self.remove_expired
+        validator.remove_expired(data_hash)
         i = 1
         n = key_array.length
         output = ""
@@ -177,57 +177,7 @@ class CommandDAO
                 output = output + " \r\n" #added for information to the client
             end
         end
-        return output + "END\r\n"
-    end
-
-    def remove_expired()
-        data_hash.each do |name,key|
-            if (Time.now > key.expTime) then 
-                data_hash.delete name
-            end
-        end
-    end
-
-    def command_checker_retrieval (array)
-        command = array[0]
-        valid_commands = ["get","gets"]
-        error = ""
-        if(!valid_commands.index(command)) then
-            return "ERROR"
-        end
-    end
-
-    def command_checker_storage (array,data)
-        command = array[0]
-        flag = array[2]
-        expTime = array[3]
-        bytes = array[4]
-        valid_commands = ["set","add","replace","append","prepend","cas","get","gets"]
-        error = ""
-        if(valid_commands.index(command)) then
-            error = "CLIENT_ERROR"
-            if ((command == 'cas' && array.length != 6) || (valid_commands.index(command) && array.length != 5)) then 
-                return error + " - Invalid command, check for missing/exceding arguments\r\n"
-            end
-            if (Integer(bytes) != data.length) then
-                error = error + " - Bytes and length of data block do not match"
-            end 
-            if (Integer(expTime) < 0 || Integer(expTime) > MAX_EXP_TIME) then
-                error = error + " - Invalid expiration time"
-            end
-            if (Integer(bytes) < 0 || Integer(bytes) > MAX_BYTES) then
-                error = error + " - Invalid bytes size"
-            end
-            if (Integer(flag) > FLAG_RANGE || Integer(flag) < -FLAG_RANGE) then
-                error = error + " - Inavlid flag"
-            end
-            if (Integer(bytes) == data.length && Integer(expTime) > 0 && Integer(expTime) < MAX_EXP_TIME && Integer(bytes) > 0 && Integer(bytes) < MAX_BYTES && Integer(flag) < FLAG_RANGE && Integer(flag) > -FLAG_RANGE ) then
-                error = "success"
-            end
-            return error + "\r\n"
-        else 
-            return error = "ERROR\r\n"
-        end
+        return output + END_MESSAGE
     end
 
 end

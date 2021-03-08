@@ -83,10 +83,15 @@ cas <key> <flags> <exptime> <bytes> <cas value> *Press the enter key*
 Where:
 
 **key** - is the reference name for how the server stores the data.
+
 **flags** - is an arbitrary 16-bit unsigned integer that is stored with the key that aids as a field to store data-specific information.
+
 **exptime** - is for how long in seconds will the item be stored. If it is 0, the item will never expire, if it is a negative value it will not be stored.
+
 **bytes** - lenght in bytes of the data block to follow.
+
 **cas unique** - is a unique 64-bit value of an existing entry. Clients should use the value returned from the "gets" command when issuing "cas" updates.
+
 
 ***Commands:***
 

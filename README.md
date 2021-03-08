@@ -56,7 +56,7 @@ telnet localhost 1010
 
 If the server is listening for connections and the client connects successfully, you will see this message pop up in the window:
 
-![alt text](https://imgur.com/a/Sp82mpW)
+![](/Welcome-client.png)
 
 Now everything is ready for its proper usage. If it is your first time interacting with a Memcached server, you may use the 'info' command for instructions on how to get started.
 

@@ -1,6 +1,6 @@
 require 'socket'
 require_relative 'DAO/dao'
-require 'pp'
+require_relative 'message'
 
 class Server
       dao = DAO.new
@@ -51,6 +51,8 @@ class Server
                         when "gets"
                               result = dao.gets(array_info)
                               client.puts(result)
+                        else
+                              client.puts(ERROR)
                         end
                   end
             end

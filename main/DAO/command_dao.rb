@@ -19,9 +19,9 @@ class CommandDAO
         if(status.include?(SUCCESS)) then
                 exp_time = Time.now + Integer(arrayInfo[3])
                 if arrayInfo.length == 5 then
-                    full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
+                    full_key = Command.new(arrayInfo[1],Integer(arrayInfo[2]),exp_time,Integer(arrayInfo[4]),value,cas_value)
                 elsif arrayInfo.length == 6 then
-                    full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,arrayInfo[5])
+                    full_key = Command.new(arrayInfo[1],Integer(arrayInfo[2]),exp_time,Integer(arrayInfo[4]),value,Integer(arrayInfo[5]))
                 end
                 data_hash.store(arrayInfo[1],full_key)
                 return STORED
@@ -38,7 +38,7 @@ class CommandDAO
         if(status.include?(SUCCESS)) then
            if(!data_hash.key?(arrayInfo[1])) then
                 exp_time = Time.now + Integer(arrayInfo[3])
-                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,cas_value)
+                full_key = Command.new(arrayInfo[1],Integer(arrayInfo[2]),exp_time,Integer(arrayInfo[4]),value,cas_value)
                 data_hash.store(arrayInfo[1],full_key)
                 return STORED
             else
@@ -60,7 +60,7 @@ class CommandDAO
                 existing_key.cas_value += 1
                 exp_time = Time.now + Integer(arrayInfo[3])
                 data_hash.delete arrayInfo[1]
-                full_key = Command.new(arrayInfo[1],arrayInfo[2],exp_time,arrayInfo[4],value,existing_key.cas_value)
+                full_key = Command.new(arrayInfo[1],Integer(arrayInfo[2]),exp_time,Integer(arrayInfo[4]),value,existing_key.cas_value)
                 data_hash.store(arrayInfo[1],full_key)
                 return STORED
             else
@@ -79,11 +79,11 @@ class CommandDAO
         if(status.include?(SUCCESS)) then
             if(data_hash.key?(arrayInfo[1])) then
                 existing_key = data_hash[arrayInfo[1]]
-                existing_key.flag = arrayInfo[2]
+                existing_key.flag = Integer(arrayInfo[2])
                 existing_key.time = Time.now + Integer(arrayInfo[3])
                 bytes = arrayInfo[4]
                 existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
-                appended_value = existing_key.value + value
+                appended_value = (existing_key.value + value)
                 existing_key.value = appended_value
                 existing_key.cas_value += 1
                 return STORED
@@ -103,7 +103,7 @@ class CommandDAO
         if(status.include?(SUCCESS)) then
             if(data_hash.key?(arrayInfo[1])) then
                 existing_key = data_hash[arrayInfo[1]]
-                existing_key.flag = arrayInfo[2]
+                existing_key.flag = Integer(arrayInfo[2])
                 existing_key.exp_Time = Time.now + Integer(arrayInfo[3])
                 bytes = arrayInfo[4]
                 existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
@@ -130,7 +130,7 @@ class CommandDAO
                 if(Integer(existing_key.cas_value) == Integer(arrayInfo[5])) then
                     new_cas = Integer(arrayInfo[5]) + 1
                     array_new_cas = [arrayInfo[0],arrayInfo[1],arrayInfo[2],arrayInfo[3],arrayInfo[4],new_cas]
-                    self.set(array_new_cas, value) #partir el array y subirle en uno el cas value
+                    self.set(array_new_cas, value)
                 else    
                     EXISTS
                 end

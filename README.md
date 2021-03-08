@@ -176,7 +176,7 @@ cas <key> <flags> <exptime> <bytes> <cas value>
 ```
 '**cas**' command example:
 ```
-cas Marco 10 600 4
+cas Marco 10 600 4 1
 John
 ```
 The possible responses from the server are: **STORED**, **EXISTS**, **NOT FOUND** and **ERROR**

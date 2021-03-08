@@ -9,6 +9,15 @@
 /test/tmp/
 /test/version_tmp/
 /tmp/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
 
 # Used by dotenv library to load environment variables.
 # .env

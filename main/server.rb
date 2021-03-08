@@ -8,12 +8,12 @@ class Server
       PORT   = 1010
       server = TCPServer.open(PORT)
 
-      puts "Listening on #{PORT}."
+      puts "Listening on Port: #{PORT}."
 
       loop {                           
             Thread.start(server.accept) do |client|
                   puts "New client: #{client}"
-                  client.puts("Hello world from server\r\n")
+                  client.puts("Welcome to the Memcached Server!\r\nYou can start using the server now, or type 'help' for command instructions.\r\n")
 
                   while line = client.gets
 
@@ -51,6 +51,8 @@ class Server
                         when "gets"
                               result = dao.gets(array_info)
                               client.puts(result)
+                        when "help"
+                              client.puts(INSTRUCTIONS)
                         else
                               client.puts(ERROR)
                         end

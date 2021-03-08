@@ -6,14 +6,6 @@ class Validator
     MAX_EXP_TIME = 2592000
     MAX_BYTES= 256
 
-    def remove_expired(data_hash)
-        data_hash.each do |name,key|
-            if (Time.now > key.exp_Time) then 
-                data_hash.delete name
-            end
-        end
-    end
-
     def command_checker_storage (array,data)
         command = array[0]
         flag = array[2]
@@ -36,11 +28,28 @@ class Validator
         if (Integer(flag) > FLAG_RANGE || Integer(flag) < -FLAG_RANGE) then
             error = error + FLAG_ERROR
         end
-        if (Integer(bytes) == data.length && Integer(exp_Time) > 0 && Integer(exp_Time) < MAX_EXP_TIME && Integer(bytes) > 0 && Integer(bytes) < MAX_BYTES && Integer(flag) < FLAG_RANGE && Integer(flag) > -FLAG_RANGE ) then
+        if (Integer(bytes) == data.length && Integer(exp_Time) >= 0 && Integer(exp_Time) < MAX_EXP_TIME && Integer(bytes) > 0 && Integer(bytes) < MAX_BYTES && Integer(flag) < FLAG_RANGE && Integer(flag) > -FLAG_RANGE ) then
             error = SUCCESS
         end
         return error + LINE_BREAK
     end
 
+    def remove_expired(data_hash)
+        data_hash.each do |name,key|
+            if(key.exp_Time == 0) then
+                nil
+            elsif (Time.now > key.exp_Time) then 
+                data_hash.delete name
+            end
+        end
+    end
+
+    def time_converter(time)
+        if(Integer(time) > 0) then
+            return Time.now + Integer(time)
+        else
+        return 0
+        end
+    end
 
 end

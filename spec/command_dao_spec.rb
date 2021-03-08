@@ -1,5 +1,5 @@
-require_relative "../main/message"
-require_relative "../main/DAO/command_dao"
+require_relative "../lib/message"
+require_relative "../lib/DAO/command_dao"
 
 
 RSpec.describe CommandDAO do

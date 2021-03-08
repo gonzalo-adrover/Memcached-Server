@@ -12,6 +12,5 @@ puts "message #{client}"
 
 line = s.gets
 puts "#{line}"
-line = s.gets
 
 s.close

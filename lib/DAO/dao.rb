@@ -1,42 +1,43 @@
+# frozen_string_literal: true
+
 require_relative 'command_dao'
 
 class DAO
-    attr_accessor :command_dao
+  attr_accessor :command_dao
 
-    def initialize
-        @command_dao = CommandDAO.new
-    end
-  
-    def set(array_info, data_block)
-        return command_dao.set(array_info,data_block)
-    end
+  def initialize
+    @command_dao = CommandDAO.new
+  end
 
-    def add(array_info, data_block)
-        return command_dao.add(array_info, data_block)
-    end
+  def set(array_info, data_block)
+    command_dao.set(array_info, data_block)
+  end
 
-    def replace(array_info, data_block)
-        return command_dao.replace(array_info, data_block)
-    end
+  def add(array_info, data_block)
+    command_dao.add(array_info, data_block)
+  end
 
-    def append(array_info, data_block)
-        return command_dao.append(array_info, data_block)
-    end
+  def replace(array_info, data_block)
+    command_dao.replace(array_info, data_block)
+  end
 
-    def prepend(array_info, data_block)
-        return command_dao.prepend(array_info, data_block)
-    end
+  def append(array_info, data_block)
+    command_dao.append(array_info, data_block)
+  end
 
-    def cas(array_info, data_block)
-        return command_dao.cas(array_info, data_block)
-    end
+  def prepend(array_info, data_block)
+    command_dao.prepend(array_info, data_block)
+  end
 
-    def get(key)
-        return command_dao.get(key)
-    end
-        
-    def gets(key)
-        return command_dao.gets(key)
-    end
-  
+  def cas(array_info, data_block)
+    command_dao.cas(array_info, data_block)
+  end
+
+  def get(key)
+    command_dao.get(key)
+  end
+
+  def gets(key)
+    command_dao.gets(key)
+  end
 end

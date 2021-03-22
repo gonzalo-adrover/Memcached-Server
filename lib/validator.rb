@@ -48,19 +48,21 @@ class Validator
   end
 
   def time_converter(time)
-    if Integer(time) > 0
-      Time.now + Integer(time)
-    else
-      0
-    end
+    (Integer(time) > 0) ? Time.now + Integer(time) : 0
   end
 
   def has_noreply(array)
-    if !array.include? 'noreply'
-      STORED
-    else
-      LINE_BREAK
-    end
+    (!array.include? 'noreply') ? STORED : LINE_BREAK
+  end
+
+  def update_modified_attributes(array_info,data_hash)
+    existing_key = data_hash[array_info[1]]
+    existing_key.flag = Integer(array_info[2])
+    existing_key.exp_time = time_converter(array_info[3])
+    bytes = array_info[4]
+    existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
+    existing_key.cas_value += 1
+    existing_key
   end
 
 end

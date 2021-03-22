@@ -34,10 +34,10 @@ class DAO
   end
 
   def get(key)
-    command_dao.get(key)
+    command_dao.getter(key,'get')
   end
 
   def gets(key)
-    command_dao.gets(key)
+    command_dao.getter(key,'gets')
   end
 end

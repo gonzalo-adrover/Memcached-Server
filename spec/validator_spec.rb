@@ -144,7 +144,7 @@ RSpec.describe Validator do
     array = ['set', 'Lorem', '0', '1', '5']
     command_dao.set(array, data)
     sleep(1.1)
-    command_dao.get('x')
+    command_dao.getter('x','get')
     expect(command_dao.data_hash.length).to eq(0)
   end
 
@@ -152,13 +152,52 @@ RSpec.describe Validator do
     array = ['set', 'Lorem', '0', '2', '5']
     command_dao.set(array, data)
     sleep(1.9)
-    command_dao.get('x')
+    command_dao.getter('x','get')
     expect(command_dao.data_hash.length).to eq(1)
   end
 
   it 'Checks time conversion is correct when = 0' do
     result = validator.time_converter(0)
     expect(result).to eq 0
+  end
+
+  it 'Checks responds line break if noreply is present' do
+    array = ['set', 'Lorem', '0', '600', '5', 'noreply']
+    result = validator.has_noreply(array)
+    expect(result).to eq LINE_BREAK
+  end
+
+  it 'Checks responds Stored if noreply is not present' do
+    array = ['set', 'Lorem', '0', '600', '5']
+    result = validator.has_noreply(array)
+    expect(result).to eq STORED
+  end
+
+  it 'should update key flag' do
+    array = ['set', 'Lorem', '0', '600', '5']
+    command_dao.set(array, data)
+    array2 = ['append', 'Lorem', '8', '600', '5']
+    validator.update_modified_attributes(array2,command_dao.data_hash)
+    key = command_dao.data_hash['Lorem']
+    expect(key.flag).to eq 8
+  end
+
+  it 'should update key bytes' do
+    array = ['set', 'Lorem', '0', '600', '5']
+    command_dao.set(array, data)
+    array2 = ['append', 'Lorem', '8', '500', '4']
+    validator.update_modified_attributes(array2,command_dao.data_hash)
+    key = command_dao.data_hash['Lorem']
+    expect(key.bytes).to eq 9
+  end
+
+  it 'should update key cas value' do
+    array = ['set', 'Lorem', '0', '600', '5']
+    command_dao.set(array, data)
+    array2 = ['append', 'Lorem', '8', '500', '4']
+    validator.update_modified_attributes(array2,command_dao.data_hash)
+    key = command_dao.data_hash['Lorem']
+    expect(key.cas_value).to eq 2
   end
 
 end

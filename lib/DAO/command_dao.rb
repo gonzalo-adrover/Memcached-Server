@@ -23,8 +23,7 @@ class CommandDAO
       data_hash.store(array_info[1], full_key)
       STORED
     when 6
-      full_key = Command.new(array_info[1], Integer(array_info[2]), exp_time, Integer(array_info[4]), value,
-                             cas_value)
+      full_key = Command.new(array_info[1], Integer(array_info[2]), exp_time, Integer(array_info[4]), value, cas_value)
       data_hash.store(array_info[1], full_key)
       LINE_BREAK
     when 7
@@ -39,6 +38,8 @@ class CommandDAO
         data_hash.store(array_info[1], full_key)
         LINE_BREAK
       end
+    else
+      ERROR
     end
   end
 
@@ -70,20 +71,10 @@ class CommandDAO
     end
   end
 
-  def update_modified_attributes(array_info)
-    existing_key = data_hash[array_info[1]]
-    existing_key.flag = Integer(array_info[2])
-    existing_key.exp_time = validator.time_converter(array_info[3])
-    bytes = array_info[4]
-    existing_key.bytes = Integer(bytes) + Integer(existing_key.bytes)
-    existing_key.cas_value += 1
-    return existing_key
-  end
-
   def append(array_info, value)
     validator.remove_expired(data_hash)
     if data_hash.key?(array_info[1])
-      update_modified_attributes(array_info)
+      validator.update_modified_attributes(array_info,data_hash)
       existing_key = data_hash[array_info[1]]
       existing_key.value = (existing_key.value + value)
       validator.has_noreply(array_info)
@@ -95,7 +86,7 @@ class CommandDAO
   def prepend(array_info, value)
     validator.remove_expired(data_hash)
     if data_hash.key?(array_info[1])
-      update_modified_attributes(array_info)
+      validator.update_modified_attributes(array_info,data_hash)
       existing_key = data_hash[array_info[1]]
       existing_key.value = value + existing_key.value
       validator.has_noreply(array_info)
@@ -120,7 +111,7 @@ class CommandDAO
     end
   end
 
-  def get(key_array)
+  def getter(key_array, type)
     validator.remove_expired(data_hash)
     i = 1
     n = key_array.length
@@ -130,7 +121,11 @@ class CommandDAO
       command = data_hash[key]
       i += 1
       output = if data_hash.key?(key)
-                 output + "VALUE #{command.key} #{command.flag} #{command.bytes}\r\n#{command.value}\r\n"
+                 if type == 'gets'
+                   output + "VALUE #{command.key} #{command.flag} #{command.bytes} #{command.cas_value}\r\n#{command.value}\r\n"
+                 elsif type == 'get'
+                   output + "VALUE #{command.key} #{command.flag} #{command.bytes}\r\n#{command.value}\r\n"
+                 end
                else
                  "#{output} \r\n"
                end
@@ -138,21 +133,4 @@ class CommandDAO
     output + END_MESSAGE
   end
 
-  def gets(key_array)
-    validator.remove_expired(data_hash)
-    i = 1
-    n = key_array.length
-    output = ''
-    until i == n
-      key = key_array[i]
-      command = data_hash[key]
-      i += 1
-      output = if data_hash.key?(key)
-                 output + "VALUE #{command.key} #{command.flag} #{command.bytes} #{command.cas_value}\r\n#{command.value}\r\n"
-               else
-                 "#{output} \r\n"
-               end
-    end
-    output + END_MESSAGE
-  end
 end

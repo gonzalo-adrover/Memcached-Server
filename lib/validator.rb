@@ -37,16 +37,6 @@ class Validator
     error + LINE_BREAK
   end
 
-  def remove_expired(data_hash)
-    data_hash.each do |name, key|
-      if key.exp_time == 0
-        nil
-      elsif Time.now > key.exp_time
-        data_hash.delete name
-      end
-    end
-  end
-
   def time_converter(time)
     (Integer(time) > 0) ? Time.now + Integer(time) : 0
   end

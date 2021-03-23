@@ -69,14 +69,14 @@ There are two kind of commands a client may utilize to work with the Memcached s
 Every storage command except for 'cas' has the following structure: 
 
 ```
-<command name> <key> <flags> <exptime> <bytes> *Press the enter key*
+<command name> <key> <flags> <exptime> <bytes> [noreply] *Press the enter key*
 <data block>
 ```
 
 For 'cas' it is the same as before but a 'cas value' needs to be added at the end of the statement:
 
 ```
-cas <key> <flags> <exptime> <bytes> <cas value> *Press the enter key*
+cas <key> <flags> <exptime> <bytes> <cas value> [noreply] *Press the enter key*
 <data block>
 ```
 
@@ -92,6 +92,7 @@ Where:
 
 **cas unique** - is a unique 64-bit value of an existing entry. Clients should use the value returned from the "gets" command when issuing "cas" updates.
 
+**noreply** -  optional parameter that instructs the server to not send the reply message, it just responds a line break to show the command went through successfully.
 
 ***Commands:***
 
@@ -113,7 +114,7 @@ The possible responses from the server are: **STORED** and **ERROR**
 **add** - The add command stores the data **only** if the server ***does not*** hold any data for that key, meaning that it will never overwrite an existing key.
 A neutral add command looks like this:
 ```
-add <key> <flags> <exptime> <bytes>
+add <key> <flags> <exptime> <bytes> [noreply]
 <data block>
 ```
 '**add**' command example:
@@ -128,13 +129,13 @@ The possible responses from the server are: **STORED**, **NOT STORED** and **ERR
 **replace** - The replace command stores the data **only** if the server ***does*** hold any data for that key, meaning that it will only overwrite existing keys.
 A neutral replace command looks like this:
 ```
-replace <key> <flags> <exptime> <bytes>
+replace <key> <flags> <exptime> <bytes> [noreply]
 <data block>
 ```
 '**replace**' command example:
 
 ```
-replace Marco 10 600 4
+replace Marco 10 600 4 [noreply]
 Polo
 ```
 The possible responses from the server are: **STORED**, **NOT STORED** and **ERROR**
@@ -143,7 +144,7 @@ The possible responses from the server are: **STORED**, **NOT STORED** and **ERR
 **append** - The append command adds data to an existing key after its existing data.
 A neutral set command looks like this:
 ```
-append <key> <flags> <exptime> <bytes>
+append <key> <flags> <exptime> <bytes> [noreply]
 <data block>
 ```
 '**append**' command example:
@@ -157,7 +158,7 @@ The possible responses from the server are: **STORED**, **NOT STORED** and **ERR
 **prepend** - The prepend command adds data to an existing key before its existing data.
 A neutral prepend command looks like this:
 ```
-prepend <key> <flags> <exptime> <bytes>
+prepend <key> <flags> <exptime> <bytes> [noreply]
 <data block>
 ```
 '**prepend**' command example:
@@ -171,7 +172,7 @@ The possible responses from the server are: **STORED**, **NOT STORED** and **ERR
 **cas** - The cas command a check and set operation which means "store this data but only if no one else has updated since I last fetched it."
 A neutral cas command looks like this:
 ```
-cas <key> <flags> <exptime> <bytes> <cas value>
+cas <key> <flags> <exptime> <bytes> <cas value> [noreply]
 <data block>
 ```
 '**cas**' command example:
@@ -244,24 +245,28 @@ The methods tested are:
 * append
 * prepend
 * cas
-* get 
-* gets
+* getter
+* remove_expired
 
 The main objective of this tests consists in forcefully manipulating items inside the Hash, and then comparing its expected value with the one returned by the CommandDAO methods.
 
 ### Validator tests
 
 The Validator tests are located in the ***/spec*** folder in the **validator_spec.rb**.
+
 The methods tested are:
-* remove_expired
-* time_converter
 * command_checker_storage
+* time_converter
+* has_noreply
+* update_modified_attributes
 
 Most of the tests here focus on getting all the possible CLIENT_ERROR messages by purposefully sending commands that do not comply with the protocol. This is done to verify that the client will always receive an expected response depending on the scenario.
 
 ## Structure
 
 This project utilizes the Data Access Object Pattern to separate low level data accessing operations from high level services. This is done so all the commands issued by the client go through a lower layer of before accessing the backend model and therefore separating the bussiness logic from the access information logic.
+
+For the prevention of possible race conditions, a Mutex is utilized from the server side. This Semaphore allows only one client connection when interacting with the server in its critical section thus controlling the mutual exclusion problem. This semaphore is being constantly locked and unlocked upon every request. If a client sends a request and another client has the Semaphore's permit, its command gets queued unitil the Mutex is free.
 
 ## Built With
 
@@ -271,7 +276,7 @@ This project utilizes the Data Access Object Pattern to separate low level data 
 
 ## Versioning
 
-Version 1.1.0 
+Version 1.0.1
 
 ## Author
 
@@ -283,5 +288,8 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-This project is a challenge proposed by the Moove It team.
+This project is a challenge proposed by the Moove It team and has implemented their suggestions to improve code quality and functionalities.
 
+## Future improvements
+
+Incorporate a timeout functionality for client's second command (only storage), in order to allow only a max time to set the value and not consume the Semaphore indefinitely, not allowing other clients to interact.

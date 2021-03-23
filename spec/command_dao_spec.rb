@@ -137,4 +137,20 @@ RSpec.describe CommandDAO do
     expect(result).to eq(" \r\nEND\r\n")
   end
 
+  it 'Checks that non-expired keys do not get removed from the cache' do
+    array = ['set', 'Lorem', '0', '2', '5']
+    command_dao.set(array, data)
+    sleep(1.9)
+    command_dao.remove_expired
+    expect(command_dao.data_hash.length).to eq(1)
+  end
+
+  it 'Checks that expired keys get removed from the cache' do
+    array = ['set', 'Lorem', '0', '1', '5']
+    command_dao.set(array, data)
+    sleep(1.1)
+    command_dao.remove_expired
+    expect(command_dao.data_hash.length).to eq(0)
+  end
+
 end

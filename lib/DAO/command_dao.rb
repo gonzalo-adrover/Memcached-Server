@@ -15,7 +15,6 @@ class CommandDAO
   end
 
   def set(array_info, value)
-    validator.remove_expired(data_hash)
     exp_time = validator.time_converter(array_info[3])
     case array_info.length
     when 5
@@ -44,7 +43,6 @@ class CommandDAO
   end
 
   def add(array_info, value)
-    validator.remove_expired(data_hash)
     if !data_hash.key?(array_info[1])
       exp_time = validator.time_converter(array_info[3])
       full_key = Command.new(array_info[1], Integer(array_info[2]), exp_time, Integer(array_info[4]), value, cas_value)
@@ -56,7 +54,6 @@ class CommandDAO
   end
 
   def replace(array_info, value)
-    validator.remove_expired(data_hash)
     if data_hash.key?(array_info[1])
       existing_key = data_hash[array_info[1]]
       existing_key.cas_value += 1
@@ -72,7 +69,6 @@ class CommandDAO
   end
 
   def append(array_info, value)
-    validator.remove_expired(data_hash)
     if data_hash.key?(array_info[1])
       validator.update_modified_attributes(array_info,data_hash)
       existing_key = data_hash[array_info[1]]
@@ -84,7 +80,6 @@ class CommandDAO
   end
 
   def prepend(array_info, value)
-    validator.remove_expired(data_hash)
     if data_hash.key?(array_info[1])
       validator.update_modified_attributes(array_info,data_hash)
       existing_key = data_hash[array_info[1]]
@@ -96,7 +91,6 @@ class CommandDAO
   end
 
   def cas(array_info, value)
-    validator.remove_expired(data_hash)
     if data_hash.key?(array_info[1])
       existing_key = data_hash[array_info[1]]
       if Integer(existing_key.cas_value) == Integer(array_info[5])
@@ -112,7 +106,6 @@ class CommandDAO
   end
 
   def getter(key_array, type)
-    validator.remove_expired(data_hash)
     i = 1
     n = key_array.length
     output = ''
@@ -131,6 +124,16 @@ class CommandDAO
                end
     end
     output + END_MESSAGE
+  end
+
+  def remove_expired()
+    data_hash.each do |name, key|
+      if key.exp_time == 0
+        nil
+      elsif Time.now > key.exp_time
+        data_hash.delete name
+      end
+    end
   end
 
 end

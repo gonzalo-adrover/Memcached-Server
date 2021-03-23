@@ -12,12 +12,18 @@ class Server
 
   puts "Listening on Port: #{PORT}."
 
+  semaphore = Mutex.new
+
   loop {
     Thread.start(server.accept) do |client|
       puts "New client: #{client}"
       client.puts("Welcome to the Memcached Server!\r\nYou can start using the server now, or type 'help' for command instructions.\r\n")
 
-      while line = client.gets
+      while (line = client.gets)
+
+        semaphore.lock
+
+        dao.remove_expired
 
         array_info = line.split
 
@@ -69,6 +75,7 @@ class Server
             client.puts(ERROR)
           end
         end
+        semaphore.unlock
       end
     end
   }

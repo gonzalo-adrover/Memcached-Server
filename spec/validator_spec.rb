@@ -44,6 +44,12 @@ RSpec.describe Validator do
     expect(result).to eq(CLIENT_ERROR + ARGUMENT_ERROR)
   end
 
+  it 'Checks that \'noreply\' argument is incorrect' do
+    array = ['cas', 'Lorem', '0', '600', '5', '5', 'norelpy']
+    result = validator.command_checker_storage(array, data)
+    expect(result).to eq(CLIENT_ERROR + NOREPLY_ERROR + LINE_BREAK)
+  end
+
   it 'Checks that bytes size and length of data differ' do
     array = ['set', 'Lorem', '0', '600', '4']
     result = validator.command_checker_storage(array, data)
@@ -135,25 +141,9 @@ RSpec.describe Validator do
   end
 
   it 'Checks that every possible input contains an error' do
-    array = ['set', 'Lorem', '65537', '-1', '258']
+    array = ['set', 'Lorem', '65537', '-1', '258', 'norelpy']
     result = validator.command_checker_storage(array, data_long)
-    expect(result).to eq(CLIENT_ERROR + MISMATCH_ERROR + TIME_ERROR + BYTES_ERROR + FLAG_ERROR + LINE_BREAK)
-  end
-
-  it 'Checks that expired keys get removed from the cache' do
-    array = ['set', 'Lorem', '0', '1', '5']
-    command_dao.set(array, data)
-    sleep(1.1)
-    command_dao.getter('x','get')
-    expect(command_dao.data_hash.length).to eq(0)
-  end
-
-  it 'Checks that non-expired keys do not get removed from the cache' do
-    array = ['set', 'Lorem', '0', '2', '5']
-    command_dao.set(array, data)
-    sleep(1.9)
-    command_dao.getter('x','get')
-    expect(command_dao.data_hash.length).to eq(1)
+    expect(result).to eq(CLIENT_ERROR + NOREPLY_ERROR + MISMATCH_ERROR + TIME_ERROR + BYTES_ERROR + FLAG_ERROR + LINE_BREAK)
   end
 
   it 'Checks time conversion is correct when = 0' do

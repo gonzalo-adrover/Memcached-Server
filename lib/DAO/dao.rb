@@ -40,4 +40,8 @@ class DAO
   def gets(key)
     command_dao.getter(key,'gets')
   end
+
+  def remove_expired()
+    command_dao.remove_expired
+  end
 end

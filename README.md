@@ -286,10 +286,6 @@ Version 1.0.1
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
-## Acknowledgments
-
-This project is a challenge proposed by the Moove It team and has implemented their suggestions to improve code quality and functionalities.
-
 ## Future improvements
 
 Incorporate a timeout functionality for client's second command (only storage), in order to allow only a max time to set the value and not consume the Semaphore indefinitely, not allowing other clients to interact.
